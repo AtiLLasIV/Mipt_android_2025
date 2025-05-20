@@ -8,7 +8,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.hwmipt.messenger.R
 import com.hwmipt.messenger.data.model.MessageModel
 
-class MessageAdapter : ListAdapter<MessageModel, MessageAdapter.MessageViewHolder>(DIFF) {
+class MessageListAdapter : ListAdapter<MessageModel, MessageListAdapter.MessageViewHolder>(DIFF) {
 
     inner class MessageViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         private val messageText: TextView = view.findViewById(R.id.item_message)

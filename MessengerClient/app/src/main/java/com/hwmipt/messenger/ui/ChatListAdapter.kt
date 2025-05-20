@@ -1,6 +1,5 @@
 package com.hwmipt.messenger.ui
 
-import android.annotation.SuppressLint
 import android.view.*
 import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
@@ -9,9 +8,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.hwmipt.messenger.R
 import com.hwmipt.messenger.data.model.ChatModel
 
-class ChatAdapter(
+class ChatListAdapter(
     private val onClick: (ChatModel) -> Unit
-) : ListAdapter<ChatModel, ChatAdapter.ChatViewHolder>(DIFF) {
+) : ListAdapter<ChatModel, ChatListAdapter.ChatViewHolder>(DIFF) {
 
     private var selectedChatId: Int? = null
 

@@ -4,19 +4,22 @@ import android.os.Bundle
 import android.view.*
 import android.widget.*
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.hwmipt.messenger.MainActivity
 import com.hwmipt.messenger.R
-import com.hwmipt.messenger.viewmodel.ChatViewModel
+import com.hwmipt.messenger.viewmodel.ChatListViewModel
+import kotlinx.coroutines.launch
 
 class ChatListFragment : Fragment() {
 
-    private lateinit var viewModel: ChatViewModel
+    private lateinit var viewModel: ChatListViewModel
     private lateinit var recyclerView: RecyclerView
-    private lateinit var adapter: ChatAdapter
+    private lateinit var adapter: ChatListAdapter
 
     private lateinit var createChatLayout: LinearLayout
     private lateinit var editChatName: EditText
@@ -33,12 +36,11 @@ class ChatListFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        viewModel = ViewModelProvider(requireActivity())[ChatViewModel::class.java]
+        viewModel = (requireActivity() as MainActivity).chatListViewModel
 
         recyclerView = view.findViewById(R.id.list_chats)
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
-
-        adapter = ChatAdapter { chat ->
+        adapter = ChatListAdapter { chat ->
             viewModel.selectChat(chat.id)
             adapter.setSelectedChatId(chat.id)
 
@@ -57,36 +59,45 @@ class ChatListFragment : Fragment() {
         }
         recyclerView.adapter = adapter
 
-        viewModel.chats.observe(viewLifecycleOwner) { chats ->
-            adapter.submitList(chats)
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.state.collect { state ->
+                    adapter.submitList(state.chats)
+                    adapter.setSelectedChatId(state.selectedChatId)
+                }
+            }
         }
-
         viewModel.loadChats()
 
+        createButtons(view)
+    }
+
+    private fun createButtons(view: View) {
         fab = view.findViewById(R.id.fab_add_chat)
         createChatLayout = view.findViewById(R.id.create_chat_layout)
+        editChatName = view.findViewById(R.id.edit_chat_name)
+        btnCreateChat = view.findViewById(R.id.btn_create_chat)
+        btnCancelChat = view.findViewById(R.id.btn_cancel_chat)
 
         fab.setOnClickListener {
             createChatLayout.visibility = View.VISIBLE
             fab.hide()
         }
 
-        editChatName = view.findViewById(R.id.edit_chat_name)
-        btnCreateChat = view.findViewById(R.id.btn_create_chat)
-        btnCancelChat = view.findViewById(R.id.btn_cancel_chat)
-
-        btnCreateChat.setOnClickListener {
-            val name = editChatName.text.toString().trim()
-            viewModel.createChat(name)
+        btnCancelChat.setOnClickListener {
             createChatLayout.visibility = View.GONE
             fab.show()
             editChatName.text.clear()
         }
 
-        btnCancelChat.setOnClickListener {
-            createChatLayout.visibility = View.GONE
-            fab.show()
-            editChatName.text.clear()
+        btnCreateChat.setOnClickListener {
+            val name = editChatName.text.toString().trim()
+            if (name.isNotEmpty()) {
+                viewModel.createChat(name)
+                createChatLayout.visibility = View.GONE
+                fab.show()
+                editChatName.text.clear()
+            }
         }
     }
 }
